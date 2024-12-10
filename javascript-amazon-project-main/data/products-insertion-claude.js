@@ -25,7 +25,7 @@ products.forEach((item) => {
           </div>
 
           <div class="product-quantity-container">
-            <select>
+            <select class="js-quantity-selector">
               <option selected value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -41,12 +41,13 @@ products.forEach((item) => {
 
           <div class="product-spacer"></div>
 
-          <div class="added-to-cart">
+          <div class="added-to-cart js-added-message">
             <img src="images/icons/checkmark.png">
             Added
           </div>
 
-          <button class="add-to-cart-button button-primary js-add-to-cart" data-product-id="${item.id}">
+          <button class="add-to-cart-button button-primary js-add-to-cart" 
+            data-product-id="${item.id}">
             Add to Cart
           </button>
         </div>
@@ -59,30 +60,56 @@ document.addEventListener('DOMContentLoaded', () => {
     if (productsGrid) {
         productsGrid.innerHTML = innerProduct;
         
-        // Add event listeners after the products are inserted
-        document.querySelectorAll('.js-add-to-cart').forEach((button) => {
-            button.addEventListener('click', () => {
-                const productId = button.dataset.productId;
-                let matchingItem;
-
-                cart.forEach((item) => {
-                    if(productId === item.productId) {
-                        matchingItem = item;
-                    }
-                });
-
-                if(matchingItem) {
-                    matchingItem.quantity += 1;
-                } else {
-                    cart.push({
-                        productId: productId,
-                        quantity: 1
-                    });
-                }
-                console.log('Cart:', cart);
-            });
-        });
+        // Setup cart functionality after products are inserted
+        setupCartFunctionality();
     } else {
         console.error('Products grid container not found');
     }
 });
+
+function setupCartFunctionality() {
+    document.querySelectorAll('.js-add-to-cart').forEach((button) => {
+        button.addEventListener('click', () => {
+            const productId = button.dataset.productId;
+            const quantitySelect = button.closest('.product-container')
+                .querySelector('.js-quantity-selector');
+            const quantity = parseInt(quantitySelect.value);
+
+            // Find if product already exists in cart
+            let matchingItem = cart.find(item => item.productId === productId);
+
+            if (matchingItem) {
+                matchingItem.quantity += quantity;
+            } else {
+                cart.push({
+                    productId: productId,
+                    quantity: quantity
+                });
+            }
+
+            // Update cart quantity display
+            updateCartQuantity();
+
+            // Show added message
+            const addedMessage = button.closest('.product-container')
+                .querySelector('.js-added-message');
+            addedMessage.style.display = 'block';
+            setTimeout(() => {
+                addedMessage.style.display = 'none';
+            }, 2000);
+
+            console.log('Cart:', cart);
+        });
+    });
+}
+
+function updateCartQuantity() {
+    const cartQuantity = document.querySelector('.js-cart-quantity');
+    let totalQuantity = 0;
+    
+    cart.forEach((item) => {
+        totalQuantity += item.quantity;
+    });
+    
+    cartQuantity.innerHTML = totalQuantity;
+}
