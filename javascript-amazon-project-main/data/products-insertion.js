@@ -1,3 +1,6 @@
+import {cart, addToCart} from './cart.js';
+import { products} from './products.js';
+
 let innerProduct = '';
 
 products.forEach((item) => {
@@ -63,26 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.js-add-to-cart').forEach((button) => {
             button.addEventListener('click', () => {
                 const productId = button.dataset.productId;
-                let matchingItem;
-
-                cart.forEach((item) => {
-                    if(productId === item.productId) {
-                        matchingItem = item;
-                    }
-                });
-
-                if(matchingItem) {
-                    matchingItem.quantity += 1;
-                } else {
-                    cart.push({
-                        productId: productId,
-                        quantity: 1
-                    });
-                }
-                console.log('Cart:', cart);
+                addToCart(productId);
             });
         });
     } else {
         console.error('Products grid container not found');
     }
-});
+}); 
