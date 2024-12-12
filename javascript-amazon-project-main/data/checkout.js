@@ -1,4 +1,4 @@
-import { cart } from "./cart.js";
+import { cart, deleteFromCart } from "./cart.js";
 import { products } from "./products.js";
 
 let cartsummaryHTML = '';
@@ -16,7 +16,7 @@ cart.forEach((cartItem) => {
 
     if (matchingItem) {
         cartsummaryHTML += `
-            <div class="cart-item-container">
+            <div class="cart-item-container js-cart-item-container-${matchingItem.id} ">
                 <div class="delivery-date">
                     Delivery date: Tuesday, June 21
                 </div>
@@ -37,7 +37,7 @@ cart.forEach((cartItem) => {
                             <span class="update-quantity-link link-primary">
                                 Update
                             </span>
-                            <span class="delete-quantity-link link-primary">
+                            <span class="delete-quantity-link link-primary js-delete-quantity-link" data-product-id = "${matchingItem.id}">
                                 Delete
                             </span>
                         </div>
@@ -95,3 +95,44 @@ cart.forEach((cartItem) => {
 console.log(cartsummaryHTML);
 
 document.querySelector('.js-order-summary').innerHTML = cartsummaryHTML;
+
+document.querySelectorAll('.js-delete-quantity-link').forEach((deleteLink) => {
+    deleteLink.addEventListener('click', () => {
+        const deleteElement = deleteLink.dataset.productId;
+        deleteFromCart(deleteElement);
+
+        const relocate = document.querySelector(`.js-cart-item-container-${deleteElement}`);
+        relocate.remove();
+    });
+    // Add your delete functionality here
+});
+
+/*document.querySelectorAll('.js-add-to-cart').forEach((addButton) => {
+    addButton.addEventListener('click', () => {
+        const productId = addButton.dataset.productId; // Get the product ID from the button
+        console.log(`Adding product with ID: ${productId}`); // Debug log
+        addToCart(productId); // Call the addToCart function
+        //updateCartSummary();// // Call a function to update the cart summary
+    });
+});*/
+
+/*function updateCartSummary() {
+    let cartsummaryHTML = '';
+    cart.forEach((cartItem) => {
+        let productId = cartItem.productId;
+        let matchingItem = products.find(product => product.id === productId);
+
+        if (matchingItem) {
+            cartsummaryHTML += `
+                <div class="cart-item-container js-cart-item-container-${matchingItem.id}">
+                    <div class="product-name">${matchingItem.name}</div>
+                    <div class="product-price">$${(matchingItem.priceCents / 100).toFixed(2)}</div>
+                    <div class="product-quantity">Quantity: ${cartItem.quantity}</div>
+                    <span class="delete-quantity-link link-primary js-delete-quantity-link" data-product-id="${matchingItem.id}">Delete</span>
+                </div>
+            `;
+        }
+    });
+
+    document.querySelector('.js-order-summary').innerHTML = cartsummaryHTML;
+};*/
