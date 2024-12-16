@@ -1,53 +1,64 @@
 import { cart, deleteFromCart } from "./cart.js";
 import { products } from "./products.js";
 import { deliveryOptions } from "./deliveryOptions.js";
-import dayjs from 'https://unpkg.com/dayjs@1.11.10/esm/index.js';
+//import dayjs from 'https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js';//
 
-let cartsummaryHTML = ''; // Global variable for all items
+// Remove the dayjs import since we're loading it from CDN
+//<script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>//
+let cartsummaryHTML = '';
 
-cart.forEach((cartItem) => {
-    let productId = cartItem.productId;
-    let matchingItem;
-    let deliveryOptionId = cartItem.deliveryOptionId;
-    let matchingDeliveryOptionId;
+function renderOrderSummary() {
 
-    products.forEach((product) => {
-        if (product.id === productId) {
-            matchingItem = product;
-        }
+    // Add error checking
+    console.log('Initial load:', {
+        cartLength: cart.length,
+        productsLength: products.length,
+        deliveryOptionsLength: deliveryOptions.length
     });
 
-    deliveryOptions.forEach((deliveryOption) => {
-        if (deliveryOption.id === deliveryOptionId) {
-            matchingDeliveryOptionId = deliveryOption;
+    cart.forEach((cartItem) => {
+        let productId = cartItem.productId;
+        console.log(productId);
+        // Set a default delivery option if none exists
+        let deliveryOptionId = cartItem.deliveryOptionId;
+        console.log(deliveryOptionId);
+        
+        let matchingItem = products.find(product => product.id === productId);
+        let matchingDeliveryOptionId = deliveryOptions.find(option => option.id === deliveryOptionId);
+
+        if (matchingItem && matchingDeliveryOptionId) {
+            cartSummary(matchingItem, cartItem, productId, matchingDeliveryOptionId);
+        } else {
+            console.error('Missing item:', { 
+                productId, 
+                deliveryOptionId,
+                hasMatchingItem: !!matchingItem,
+                hasDeliveryOption: !!matchingDeliveryOptionId 
+            });
         }
     });
+    document.querySelector('.js-order-summary').innerHTML = cartsummaryHTML;
+}
 
-    if (matchingItem && matchingDeliveryOptionId) {
-        // This function will add its result to cartsummaryHTML
-        cartSummary(matchingItem, cartItem, productId, matchingDeliveryOptionId);
-    }
-});
 
-// After loop is done, cartsummaryHTML has all items
-document.querySelector('.js-order-summary').innerHTML = cartsummaryHTML;
 
 function cartSummary(matchingItem, cartItem, productId, matchingDeliveryOptionId) {
+    if (!dayjs) {
+        console.error('dayjs is not loaded');
+        return;
+    }
+
     let today = dayjs();
     let deliveryDate = today.add(matchingDeliveryOptionId.deliveryDays, 'days');
     let dateString = deliveryDate.format('dddd, MMMM D');
 
-    // This variable holds just one item's HTML
-    let cartsummary = '';
-
-    cartsummary += `
-     <div class="cart-item-container js-cart-item-container-${matchingItem.id}">
-        <div class="delivery-date">
+    let cartsummary = `
+    <div class="cart-item-container js-cart-item-container-${matchingItem.id}">
+        <div class="delivery-date js-delivery-date-${matchingDeliveryOptionId.id}-${productId}">
             Delivery date: ${dateString}
         </div>
         <div class="cart-item-details-grid">
-            <img class="product-image"
-                src="${matchingItem.image}">
+            <img class="product-image" src="${matchingItem.image}">
             <div class="cart-item-details">
                 <div class="product-name">
                     ${matchingItem.name}
@@ -76,12 +87,14 @@ function cartSummary(matchingItem, cartItem, productId, matchingDeliveryOptionId
             </div>
         </div>
     </div>`;
-
-    // Add this single item to the global HTML
-    cartsummaryHTML += cartsummary;
     
-    return cartsummary; // Returns single item HTML if needed
+    cartsummaryHTML += cartsummary;
+    return cartsummary;
 }
+
+
+renderOrderSummary()
+
 
 function deliveryOptionsHTML(productId) {
     let html = '';
@@ -92,12 +105,12 @@ function deliveryOptionsHTML(productId) {
         let dateString = deliveryDate.format('dddd, MMMM D');
 
         html += `
-            <div class="delivery-option js-delivery-option" data-deliveryoption-id="${deliveryOption.id}">
+            <div class="delivery-option js-delivery-option" data-deliveryoption-id="${deliveryOption.id}" data-product-id = "${productId}">
                 <input type="radio" checked
                     class="delivery-option-input js-delivery-option-input" data-product-id="${productId}" 
                     name="delivery-option-${productId}">
                 <div>
-                    <div class="delivery-option-date">
+                    <div class="delivery-option-date js-delivery-option-date-${deliveryOption.id}-${productId}">
                         ${dateString}
                     </div>
                     <div class="delivery-option-price">
@@ -120,8 +133,32 @@ document.querySelectorAll('.js-delete-quantity-link').forEach((deleteLink) => {
     // Add your delete functionality here
 });
 
+document.querySelectorAll('.js-delivery-option').forEach((element) => {
+    element.addEventListener('click', () => {
+        let { deliveryOptionId, productId } = element.dataset;
+        
+        // Add error checking
+        const dateElement = document.querySelector(`.js-delivery-option-date-${deliveryOptionId}-${productId}`);
+        if (!dateElement) {
+            console.error('Could not find delivery date element');
+            return;
+        }
+        
+        let deliveryDate = dateElement.textContent;
+        console.log('Selected delivery date:', deliveryDate);
+        
+        cartsummaryHTML = '';
+        renderOrderSummary();
+        
+        const mainDateElement = document.querySelector(`.js-delivery-date-${deliveryOptionId}-${productId}`);
+        if (mainDateElement) {
+            mainDateElement.innerHTML = `Delivery Date: ${deliveryDate}`;
+        }
+    });
+});
+
 // Add at the end of checkout.js
-window.addEventListener('DOMContentLoaded', () => {
+/*window.addEventListener('DOMContentLoaded', () => {
     console.log('DOM loaded');
     console.log('Final HTML:', cartsummaryHTML);
 });
@@ -158,4 +195,4 @@ try {
     console.error('Error in checkout.js:', error);
     document.querySelector('.js-order-summary').innerHTML = 
         '<p>Sorry, there was an error loading the cart. Please try refreshing the page.</p>';
-}
+}*/
